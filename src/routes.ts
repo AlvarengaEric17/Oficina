@@ -1,0 +1,209 @@
+import { Router, Request, Response } from 'express';
+import { validateSchema } from './middlewares/validateSchema';
+import { isAuthenticated } from './middlewares/isAuthenticated';
+import { isMechanic } from './middlewares/isMechanic';
+import { isAdmin } from './middlewares/isAdmin';
+
+// User controllers
+import {
+  CreateUserController,
+  SessionController,
+  GetMeController,
+} from './controllers/user/userController';
+
+// Part controllers
+import {
+  CreatePartController,
+  ListPartsController,
+  UpdatePartController,
+} from './controllers/part/partController';
+
+// Budget controllers
+import {
+  CreateBudgetController,
+  AddItemBudgetController,
+  GetBudgetShareController,
+  ApproveBudgetController,
+  UpdateBudgetStatusController,
+  GetVehicleHistoryController,
+} from './controllers/budget/budgetController';
+
+// Financial controllers
+import {
+  CreateManualTransactionController,
+  GetCashFlowController,
+  CalculateTaxController,
+} from './controllers/financial/financialController';
+
+// Schedule controllers
+import {
+  CreateScheduleSlotController,
+  GetPublicScheduleController,
+  GetMechanicScheduleController,
+  UpdateSlotAvailabilityController,
+} from './controllers/schedule/scheduleController';
+
+// Schemas
+import { createUserSchema, sessionSchema } from './schemas/userSchema';
+import { createPartSchema, updatePartSchema } from './schemas/partSchema';
+import {
+  createBudgetSchema,
+  addItemBudgetSchema,
+  updateStatusSchema,
+} from './schemas/budgetSchema';
+import {
+  manualTransactionSchema,
+  calculateTaxSchema,
+} from './schemas/financialSchema';
+import { createSlotSchema } from './schemas/scheduleSchema';
+
+const router = Router();
+
+// Health check
+router.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// ========== USER ROUTES ==========
+const createUserController = new CreateUserController();
+const sessionController = new SessionController();
+const getMeController = new GetMeController();
+
+router.post('/users', validateSchema('body')(createUserSchema), (req, res) =>
+  createUserController.handle(req, res)
+);
+
+router.post('/session', validateSchema('body')(sessionSchema), (req, res) =>
+  sessionController.handle(req, res)
+);
+
+router.get('/me', isAuthenticated, (req, res) =>
+  getMeController.handle(req, res)
+);
+
+// ========== PART ROUTES ==========
+const createPartController = new CreatePartController();
+const listPartsController = new ListPartsController();
+const updatePartController = new UpdatePartController();
+
+router.post(
+  '/part',
+  isAuthenticated,
+  isMechanic,
+  validateSchema('body')(createPartSchema),
+  (req, res) => createPartController.handle(req, res)
+);
+
+router.get('/parts', isAuthenticated, isMechanic, (req, res) =>
+  listPartsController.handle(req, res)
+);
+
+router.put(
+  '/part/:id',
+  isAuthenticated,
+  isMechanic,
+  validateSchema('body')(updatePartSchema),
+  (req, res) => updatePartController.handle(req, res)
+);
+
+// ========== BUDGET ROUTES ==========
+const createBudgetController = new CreateBudgetController();
+const addItemBudgetController = new AddItemBudgetController();
+const getBudgetShareController = new GetBudgetShareController();
+const approveBudgetController = new ApproveBudgetController();
+const updateBudgetStatusController = new UpdateBudgetStatusController();
+const getVehicleHistoryController = new GetVehicleHistoryController();
+
+router.post(
+  '/budget',
+  isAuthenticated,
+  isMechanic,
+  validateSchema('body')(createBudgetSchema),
+  (req, res) => createBudgetController.handle(req, res)
+);
+
+router.post(
+  '/budget/item',
+  isAuthenticated,
+  isMechanic,
+  validateSchema('body')(addItemBudgetSchema),
+  (req, res) => addItemBudgetController.handle(req, res)
+);
+
+router.get('/budget/share/:id', (req, res) =>
+  getBudgetShareController.handle(req, res)
+);
+
+router.patch('/budget/approve/:id', (req, res) =>
+  approveBudgetController.handle(req, res)
+);
+
+router.patch(
+  '/budget/status/:id',
+  isAuthenticated,
+  isMechanic,
+  validateSchema('body')(updateStatusSchema),
+  (req, res) => updateBudgetStatusController.handle(req, res)
+);
+
+router.get(
+  '/vehicles/history',
+  isAuthenticated,
+  isMechanic,
+  (req, res) => getVehicleHistoryController.handle(req, res)
+);
+
+// ========== FINANCIAL ROUTES ==========
+const createManualTransactionController = new CreateManualTransactionController();
+const getCashFlowController = new GetCashFlowController();
+const calculateTaxController = new CalculateTaxController();
+
+router.post(
+  '/financial/transaction',
+  isAuthenticated,
+  isAdmin,
+  validateSchema('body')(manualTransactionSchema),
+  (req, res) => createManualTransactionController.handle(req, res)
+);
+
+router.get('/financial/cashflow', isAuthenticated, isAdmin, (req, res) =>
+  getCashFlowController.handle(req, res)
+);
+
+router.post(
+  '/financial/calculate-tax',
+  isAuthenticated,
+  validateSchema('body')(calculateTaxSchema),
+  (req, res) => calculateTaxController.handle(req, res)
+);
+
+// ========== SCHEDULE ROUTES ==========
+const createScheduleSlotController = new CreateScheduleSlotController();
+const getPublicScheduleController = new GetPublicScheduleController();
+const getMechanicScheduleController = new GetMechanicScheduleController();
+const updateSlotAvailabilityController = new UpdateSlotAvailabilityController();
+
+router.post(
+  '/schedule/slots',
+  isAuthenticated,
+  isMechanic,
+  validateSchema('body')(createSlotSchema),
+  (req, res) => createScheduleSlotController.handle(req, res)
+);
+
+router.get('/schedule/public', (req, res) =>
+  getPublicScheduleController.handle(req, res)
+);
+
+router.get('/schedule/mechanic', isAuthenticated, isMechanic, (req, res) =>
+  getMechanicScheduleController.handle(req, res)
+);
+
+router.patch(
+  '/schedule/slots/:id',
+  isAuthenticated,
+  isMechanic,
+  (req, res) => updateSlotAvailabilityController.handle(req, res)
+);
+
+export { router };

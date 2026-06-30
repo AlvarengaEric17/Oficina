@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  MECHANIC
+  ADMIN
+}
+
+enum TransactionType {
+  INPUT
+  OUTPUT
+}
+
+enum BudgetStatus {
+  DRAFT
+  WAITING_APPROVAL
+  APPROVED
+  IN_PROGRESS
+  TESTING
+  READY
+  DELIVERED
+  REJECTED
+}
+
+// Models
+model User {
+  id    String  @id @default(uuid())
+  name  String
+  email String  @unique
+  password String
+  role  Role    @default(MECHANIC)
+
+  budgets   Budget[]
+  schedules Schedule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Part {
+  id            String  @id @default(uuid())
+  name          String
+  sku           String  @unique
+  cost_price    Int     // em centavos
+  sale_price    Int     // em centavos
+  quantity      Int
+  min_quantity  Int
+
+  budget_items BudgetItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Budget {
+  id              String        @id @default(uuid())
+  vehicle_plate   String
+  vehicle_model   String
+  client_name     String
+  client_phone    String
+  status          BudgetStatus  @default(DRAFT)
+  mechanic_id     String
+  mechanic        User          @relation(fields: [mechanic_id], references: [id], onDelete: Cascade)
+  total_value     Int           // em centavos
+
+  items      BudgetItem[]
+  financials Financial[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mechanic_id])
+  @@index([status])
+}
+
+model BudgetItem {
+  id          String  @id @default(uuid())
+  budget_id   String
+  budget      Budget  @relation(fields: [budget_id], references: [id], onDelete: Cascade)
+  part_id     String?
+  part        Part?   @relation(fields: [part_id], references: [id], onDelete: SetNull)
+  description String  // nome da mão de obra ou descrição da peça
+  cost        Int     // em centavos (custo)
+  price       Int     // em centavos (preço de venda)
+  quantity    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([budget_id])
+  @@index([part_id])
+}
+
+model Financial {
+  id              String          @id @default(uuid())
+  budget_id       String?
+  budget          Budget?         @relation(fields: [budget_id], references: [id], onDelete: SetNull)
+  description     String
+  type            TransactionType
+  value           Int             // em centavos
+  payment_method  String?
+  
+  createdAt DateTime @default(now())
+
+  @@index([budget_id])
+  @@index([type])
+}
+
+model Schedule {
+  id            String    @id @default(uuid())
+  mechanic_id   String
+  mechanic      User      @relation(fields: [mechanic_id], references: [id], onDelete: Cascade)
+  start_time    DateTime
+  end_time      DateTime
+  is_available  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mechanic_id])
+  @@index([start_time])
+}
