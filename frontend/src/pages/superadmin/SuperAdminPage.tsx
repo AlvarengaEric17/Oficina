@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { companyService } from '../../services/companyService';
+import { authService } from '../../services/authService';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -68,6 +69,16 @@ export const SuperAdminPage: React.FC = () => {
     }
   };
 
+  const handleRoleChange = async (company: Company, userId: string, newRole: 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN') => {
+    try {
+      await authService.updateUser(userId, { role: newRole, company_id: company.id });
+      await loadCompanies();
+      toast.success('Permissão atualizada');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Erro ao atualizar permissão');
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -113,11 +124,27 @@ export const SuperAdminPage: React.FC = () => {
 
               <div className="mt-4">
                 <p className="font-semibold mb-2">Usuários</p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-3">
                   {company.users.length === 0 ? <li>Nenhum usuário</li> : company.users.map((user) => (
-                    <li key={user.id}>{user.name} ({user.email}) - {user.role}</li>
+                    <li key={user.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border rounded p-3">
+                      <span>{user.name} ({user.email})</span>
+                      <Select
+                        label="Permissão"
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(company, user.id, e.target.value as 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN')}
+                        options={[
+                          { value: 'MECHANIC', label: 'Mecânico' },
+                          { value: 'ADMIN', label: 'Administrador' },
+                          { value: 'SUPER_ADMIN', label: 'Super Admin' },
+                        ]}
+                      />
+                    </li>
                   ))}
                 </ul>
+              </div>
+
+              <div className="mt-4 text-sm text-gray-500">
+                Para contratar o plano PRO, entre em contato pelo WhatsApp 14996459936.
               </div>
             </Card>
           ))}

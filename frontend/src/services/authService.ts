@@ -13,6 +13,11 @@ export const authService = {
     return response;
   },
 
+  async updateUser(id: string, data: { role?: 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN'; company_id?: string | null }): Promise<User> {
+    const { data: response } = await apiClient.patch<User>(`/users/${id}`, data);
+    return response;
+  },
+
   async login(email: string, password: string): Promise<AuthResponse> {
     const { data } = await apiClient.post<AuthResponse>('/session', { email, password });
     localStorage.setItem('auth_token', data.token);

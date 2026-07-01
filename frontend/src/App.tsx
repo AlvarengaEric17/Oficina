@@ -15,7 +15,7 @@ import { AgendaPage } from './pages/agenda/AgendaPage';
 import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
 
 function App() {
-  const { initAuth, isAuthenticated } = useAuthStore();
+  const { initAuth, isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
     initAuth();
@@ -34,7 +34,7 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              {user?.role === 'SUPER_ADMIN' ? <Navigate to="/super-admin" replace /> : <DashboardPage />}
             </ProtectedRoute>
           }
         />

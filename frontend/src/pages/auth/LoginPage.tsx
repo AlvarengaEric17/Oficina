@@ -7,10 +7,13 @@ import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 
 export const LoginPage: React.FC = () => {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
 
   const navigate = useNavigate();
   const { setUser, setToken } = useAuthStore();
@@ -18,6 +21,37 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    if (isRegistering) {
+      if (!name) setErrors((prev) => ({ ...prev, name: 'Nome é obrigatório' }));
+      if (!email) setErrors((prev) => ({ ...prev, email: 'Email é obrigatório' }));
+      if (!password) setErrors((prev) => ({ ...prev, password: 'Senha é obrigatória' }));
+      if (!confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: 'Confirme a senha' }));
+      if (password && confirmPassword && password !== confirmPassword) {
+        setErrors((prev) => ({ ...prev, confirmPassword: 'As senhas não conferem' }));
+      }
+
+      if (!name || !email || !password || !confirmPassword || password !== confirmPassword) {
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        await authService.createUser({ name, email, password });
+        toast.success('Conta criada com sucesso! Aguarde o super admin liberar as permissões.');
+        setIsRegistering(false);
+        setName('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+      } catch (error: any) {
+        const message = error.response?.data?.error || 'Erro ao criar conta';
+        toast.error(message);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     if (!email) setErrors((prev) => ({ ...prev, email: 'Email é obrigatório' }));
     if (!password) setErrors((prev) => ({ ...prev, password: 'Senha é obrigatória' }));
@@ -45,6 +79,17 @@ export const LoginPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">🔧 Oficina Mecânica</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {isRegistering && (
+            <Input
+              label="Nome"
+              placeholder="Seu nome completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              error={errors.name}
+              required
+            />
+          )}
+
           <Input
             type="email"
             label="Email"
@@ -65,6 +110,18 @@ export const LoginPage: React.FC = () => {
             required
           />
 
+          {isRegistering && (
+            <Input
+              type="password"
+              label="Confirmar senha"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={errors.confirmPassword}
+              required
+            />
+          )}
+
           <Button
             type="submit"
             variant="primary"
@@ -72,14 +129,29 @@ export const LoginPage: React.FC = () => {
             isLoading={isLoading}
             className="w-full"
           >
-            Entrar
+            {isRegistering ? 'Criar conta' : 'Entrar'}
           </Button>
         </form>
 
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={() => setIsRegistering((prev) => !prev)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {isRegistering ? 'Já tenho conta' : 'Criar conta'}
+          </button>
+        </div>
+
         <p className="text-center text-gray-600 mt-6 text-sm">
+          Para contratar o plano PRO, entre em contato pelo WhatsApp<br />
+          <span className="font-semibold">14996459936</span>
+        </p>
+
+        <p className="text-center text-gray-600 mt-2 text-sm">
           Credenciais de demonstração:<br />
           Email: admin@oficina.com<br />
-          Senha: senha123
+          Senha: 123456
         </p>
       </div>
     </div>

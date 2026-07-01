@@ -9,6 +9,7 @@ import {
   CreateUserController,
   SessionController,
   GetMeController,
+  UpdateUserController,
 } from './controllers/user/userController';
 
 // Part controllers
@@ -51,7 +52,7 @@ import {
 } from './controllers/schedule/scheduleController';
 
 // Schemas
-import { createUserSchema, sessionSchema } from './schemas/userSchema';
+import { createUserSchema, sessionSchema, updateUserSchema } from './schemas/userSchema';
 import { createPartSchema, updatePartSchema } from './schemas/partSchema';
 import {
   createBudgetSchema,
@@ -96,9 +97,18 @@ router.get('/health', (req: Request, res: Response) => {
 const createUserController = new CreateUserController();
 const sessionController = new SessionController();
 const getMeController = new GetMeController();
+const updateUserController = new UpdateUserController();
 
 router.post('/users', validateSchema('body')(createUserSchema), (req, res) =>
   createUserController.handle(req, res)
+);
+
+router.patch(
+  '/users/:id',
+  isAuthenticated,
+  isSuperAdmin,
+  validateSchema('body')(updateUserSchema),
+  (req, res) => updateUserController.handle(req, res)
 );
 
 router.post('/session', validateSchema('body')(sessionSchema), (req, res) =>

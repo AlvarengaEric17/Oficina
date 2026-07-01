@@ -6,16 +6,16 @@ interface NavItem {
   label: string;
   to: string;
   icon: string;
-  requiredRole?: 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN';
+  allowedRoles?: Array<'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN'>;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', to: '/', icon: '📊', requiredRole: undefined },
-  { label: 'Estoque', to: '/estoque', icon: '📦', requiredRole: undefined },
-  { label: 'Orçamentos', to: '/orcamentos', icon: '💰', requiredRole: undefined },
-  { label: 'Financeiro', to: '/financeiro', icon: '💳', requiredRole: 'ADMIN' },
-  { label: 'Agenda', to: '/agenda', icon: '📅', requiredRole: undefined },
-  { label: 'Super Admin', to: '/super-admin', icon: '🛡️', requiredRole: 'SUPER_ADMIN' },
+  { label: 'Dashboard', to: '/', icon: '📊', allowedRoles: ['MECHANIC', 'ADMIN'] },
+  { label: 'Estoque', to: '/estoque', icon: '📦', allowedRoles: ['MECHANIC', 'ADMIN'] },
+  { label: 'Orçamentos', to: '/orcamentos', icon: '💰', allowedRoles: ['MECHANIC', 'ADMIN'] },
+  { label: 'Financeiro', to: '/financeiro', icon: '💳', allowedRoles: ['ADMIN'] },
+  { label: 'Agenda', to: '/agenda', icon: '📅', allowedRoles: ['MECHANIC', 'ADMIN'] },
+  { label: 'Super Admin', to: '/super-admin', icon: '🛡️', allowedRoles: ['SUPER_ADMIN'] },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -23,7 +23,7 @@ export const Sidebar: React.FC = () => {
   const { user } = useAuthStore();
 
   const filteredItems = navItems.filter(
-    (item) => !item.requiredRole || item.requiredRole === user?.role
+    (item) => !item.allowedRoles || item.allowedRoles.includes(user?.role as 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN')
   );
 
   return (

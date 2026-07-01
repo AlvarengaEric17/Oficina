@@ -8,6 +8,11 @@ export const createUserSchema = z.object({
   company_id: z.string().uuid('ID da empresa inválido').optional(),
 });
 
+export const updateUserSchema = z.object({
+  role: z.enum(['MECHANIC', 'ADMIN', 'SUPER_ADMIN']).optional(),
+  company_id: z.string().uuid('ID da empresa inválido').nullable().optional(),
+});
+
 export const sessionSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(1, 'Senha é obrigatória'),
