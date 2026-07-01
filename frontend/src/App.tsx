@@ -6,6 +6,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Pages
 import { LoginPage } from './pages/auth/LoginPage';
+import { HomePage } from './pages/home/HomePage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { EstoquePage } from './pages/estoque/EstoquePage';
 import { OrcamentosPage } from './pages/orcamentos/OrcamentosPage';
@@ -23,18 +25,50 @@ function App() {
 
   return (
     <Router>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            borderRadius: '0.5rem',
+            background: '#1f2937',
+            color: '#fff',
+            fontSize: '0.875rem',
+          },
+          success: {
+            iconTheme: { primary: '#10b981', secondary: '#fff' },
+            style: { borderLeft: '4px solid #10b981' },
+          },
+          error: {
+            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            style: { borderLeft: '4px solid #ef4444' },
+          },
+        }}
+      />
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/orcamento/:id" element={<BudgetPublicPage />} />
-
-        {/* Protected routes */}
         <Route
           path="/"
           element={
+            isAuthenticated ? (
+              user?.role === 'SUPER_ADMIN' ? (
+                <Navigate to="/super-admin" replace />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            ) : (
+              <HomePage />
+            )
+          }
+        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/orcamento/:id" element={<BudgetPublicPage />} />
+        {/* Protected routes */}
+        <Route
+          path="/dashboard"
+          element={
             <ProtectedRoute>
-              {user?.role === 'SUPER_ADMIN' ? <Navigate to="/super-admin" replace /> : <DashboardPage />}
+              <DashboardPage />
             </ProtectedRoute>
           }
         />
@@ -85,7 +119,7 @@ function App() {
         />
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );

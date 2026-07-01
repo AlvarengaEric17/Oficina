@@ -3,6 +3,11 @@ import { validateSchema } from './middlewares/validateSchema';
 import { isAuthenticated } from './middlewares/isAuthenticated';
 import { isMechanic } from './middlewares/isMechanic';
 import { isAdmin, isSuperAdmin } from './middlewares/isAdmin';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  publicBudgetRateLimiter,
+} from './middlewares/rateLimiter';
 
 // User controllers
 import {
@@ -99,8 +104,11 @@ const sessionController = new SessionController();
 const getMeController = new GetMeController();
 const updateUserController = new UpdateUserController();
 
-router.post('/users', validateSchema('body')(createUserSchema), (req, res) =>
-  createUserController.handle(req, res)
+router.post(
+  '/users',
+  registerRateLimiter,
+  validateSchema('body')(createUserSchema),
+  (req, res) => createUserController.handle(req, res)
 );
 
 router.patch(
@@ -111,8 +119,11 @@ router.patch(
   (req, res) => updateUserController.handle(req, res)
 );
 
-router.post('/session', validateSchema('body')(sessionSchema), (req, res) =>
-  sessionController.handle(req, res)
+router.post(
+  '/session',
+  loginRateLimiter,
+  validateSchema('body')(sessionSchema),
+  (req, res) => sessionController.handle(req, res)
 );
 
 router.get('/me', isAuthenticated, (req, res) =>
@@ -180,12 +191,16 @@ router.post(
   (req, res) => addItemBudgetController.handle(req, res)
 );
 
-router.get('/budget/share/:id', (req, res) =>
-  getBudgetShareController.handle(req, res)
+router.get(
+  '/budget/share/:id',
+  publicBudgetRateLimiter,
+  (req, res) => getBudgetShareController.handle(req, res)
 );
 
-router.patch('/budget/approve/:id', (req, res) =>
-  approveBudgetController.handle(req, res)
+router.patch(
+  '/budget/approve/:id',
+  publicBudgetRateLimiter,
+  (req, res) => approveBudgetController.handle(req, res)
 );
 
 router.patch(

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://upgraded-broccoli-v9j65j94799hw5r9-3000.app.github.dev';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://super-duper-parakeet-qj57x5jrg59hxxq7-3000.app.github.dev';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
