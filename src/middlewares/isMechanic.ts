@@ -11,8 +11,8 @@ export const isMechanic = async (req: Request, res: Response, next: NextFunction
       where: { id: req.user_id },
     });
 
-    if (!user || (user.role !== 'MECHANIC' && user.role !== 'ADMIN')) {
-      return res.status(403).json({ error: 'Acesso negado: apenas mecânicos e admins podem executar esta operação' });
+    if (!user || (user.role !== 'MECHANIC' && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
+      return res.status(403).json({ error: 'Acesso negado: apenas mecânicos, admins e super admins podem executar esta operação' });
     }
 
     next();

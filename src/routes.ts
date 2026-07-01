@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { validateSchema } from './middlewares/validateSchema';
 import { isAuthenticated } from './middlewares/isAuthenticated';
 import { isMechanic } from './middlewares/isMechanic';
-import { isAdmin } from './middlewares/isAdmin';
+import { isAdmin, isSuperAdmin } from './middlewares/isAdmin';
 
 // User controllers
 import {
@@ -35,6 +35,13 @@ import {
   CalculateTaxController,
 } from './controllers/financial/financialController';
 
+// Company controllers
+import {
+  CreateCompanyController,
+  ListCompaniesController,
+  UpdateCompanyController,
+} from './controllers/company/companyController';
+
 // Schedule controllers
 import {
   CreateScheduleSlotController,
@@ -56,8 +63,29 @@ import {
   calculateTaxSchema,
 } from './schemas/financialSchema';
 import { createSlotSchema } from './schemas/scheduleSchema';
+import { createCompanySchema, updateCompanySchema } from './schemas/companySchema';
 
 const router = Router();
+
+const createCompanyController = new CreateCompanyController();
+const listCompaniesController = new ListCompaniesController();
+const updateCompanyController = new UpdateCompanyController();
+const createBudgetController = new CreateBudgetController();
+const addItemBudgetController = new AddItemBudgetController();
+const getBudgetShareController = new GetBudgetShareController();
+const approveBudgetController = new ApproveBudgetController();
+const updateBudgetStatusController = new UpdateBudgetStatusController();
+const getVehicleHistoryController = new GetVehicleHistoryController();
+const createPartController = new CreatePartController();
+const listPartsController = new ListPartsController();
+const updatePartController = new UpdatePartController();
+const createManualTransactionController = new CreateManualTransactionController();
+const getCashFlowController = new GetCashFlowController();
+const calculateTaxController = new CalculateTaxController();
+const createScheduleSlotController = new CreateScheduleSlotController();
+const getPublicScheduleController = new GetPublicScheduleController();
+const getMechanicScheduleController = new GetMechanicScheduleController();
+const updateSlotAvailabilityController = new UpdateSlotAvailabilityController();
 
 // Health check
 router.get('/health', (req: Request, res: Response) => {
@@ -81,11 +109,30 @@ router.get('/me', isAuthenticated, (req, res) =>
   getMeController.handle(req, res)
 );
 
-// ========== PART ROUTES ==========
-const createPartController = new CreatePartController();
-const listPartsController = new ListPartsController();
-const updatePartController = new UpdatePartController();
+router.post(
+  '/companies',
+  isAuthenticated,
+  isSuperAdmin,
+  validateSchema('body')(createCompanySchema),
+  (req, res) => createCompanyController.handle(req, res)
+);
 
+router.get(
+  '/companies',
+  isAuthenticated,
+  isSuperAdmin,
+  (req, res) => listCompaniesController.handle(req, res)
+);
+
+router.patch(
+  '/companies/:id',
+  isAuthenticated,
+  isSuperAdmin,
+  validateSchema('body')(updateCompanySchema),
+  (req, res) => updateCompanyController.handle(req, res)
+);
+
+// ========== PART ROUTES ==========
 router.post(
   '/part',
   isAuthenticated,
@@ -107,13 +154,6 @@ router.put(
 );
 
 // ========== BUDGET ROUTES ==========
-const createBudgetController = new CreateBudgetController();
-const addItemBudgetController = new AddItemBudgetController();
-const getBudgetShareController = new GetBudgetShareController();
-const approveBudgetController = new ApproveBudgetController();
-const updateBudgetStatusController = new UpdateBudgetStatusController();
-const getVehicleHistoryController = new GetVehicleHistoryController();
-
 router.post(
   '/budget',
   isAuthenticated,
@@ -154,10 +194,6 @@ router.get(
 );
 
 // ========== FINANCIAL ROUTES ==========
-const createManualTransactionController = new CreateManualTransactionController();
-const getCashFlowController = new GetCashFlowController();
-const calculateTaxController = new CalculateTaxController();
-
 router.post(
   '/financial/transaction',
   isAuthenticated,
@@ -178,11 +214,6 @@ router.post(
 );
 
 // ========== SCHEDULE ROUTES ==========
-const createScheduleSlotController = new CreateScheduleSlotController();
-const getPublicScheduleController = new GetPublicScheduleController();
-const getMechanicScheduleController = new GetMechanicScheduleController();
-const updateSlotAvailabilityController = new UpdateSlotAvailabilityController();
-
 router.post(
   '/schedule/slots',
   isAuthenticated,

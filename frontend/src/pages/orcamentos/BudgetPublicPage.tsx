@@ -44,8 +44,8 @@ export const BudgetPublicPage: React.FC = () => {
     setIsApproving(true);
     try {
       await budgetService.approveBudget(budget.id);
-      toast.success('Orçamento aprovado com sucesso!');
-      setBudget({ ...budget, status: 'APPROVED' });
+      toast.success('Orçamento aprovado com sucesso! A ordem de serviço foi criada.');
+      setBudget({ ...budget, status: 'IN_PROGRESS' });
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Erro ao aprovar orçamento');
     } finally {
@@ -235,7 +235,7 @@ export const BudgetPublicPage: React.FC = () => {
         {budget.status === 'IN_PROGRESS' && (
           <Card className="border-l-4 border-blue-500 bg-blue-50">
             <p className="text-center text-blue-800 font-semibold">
-              🔧 Seu veículo está em andamento! Acompanhe o progresso em tempo real.
+              🔧 Sua ordem de serviço foi criada e o veículo está em andamento!
             </p>
           </Card>
         )}

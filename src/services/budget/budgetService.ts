@@ -1,9 +1,15 @@
 import { prismaClient } from '../../prisma/client';
 import { CreateBudgetInput, AddItemBudgetInput, UpdateStatusInput } from '../../schemas/budgetSchema';
 import { getWebSocketManager } from '../../websocket/manager';
+import { PlanLimitService } from '../planLimitService';
 
 export class CreateBudgetService {
-  async execute(data: CreateBudgetInput, mechanicId: string) {
+  async execute(data: CreateBudgetInput, mechanicId: string, companyId?: string) {
+    if (companyId) {
+      const limitService = new PlanLimitService();
+      await limitService.ensureLimit(companyId, 'budget');
+    }
+
     const budget = await prismaClient.budget.create({
       data: {
         vehicle_plate: data.vehicle_plate,
@@ -11,6 +17,7 @@ export class CreateBudgetService {
         client_name: data.client_name,
         client_phone: data.client_phone,
         mechanic_id: mechanicId,
+        company_id: companyId,
         total_value: 0,
       },
       include: {
@@ -53,7 +60,7 @@ export class AddItemBudgetService {
         throw new Error('Peça não encontrada');
       }
 
-      description = part.name;
+      description = data.labor_name ? `${part.name} - ${data.labor_name}` : part.name;
     }
 
     const item = await prismaClient.budgetItem.create({
@@ -97,8 +104,8 @@ export class ApproveBudgetService {
       throw new Error('Orçamento não encontrado');
     }
 
-    if (budget.status !== 'DRAFT' && budget.status !== 'WAITING_APPROVAL') {
-      throw new Error('Orçamento não pode ser aprovado neste status');
+    if (budget.status !== 'WAITING_APPROVAL') {
+      throw new Error('O orçamento precisa estar aguardando aprovação do cliente');
     }
 
     // Verificar estoque para todos os itens
@@ -130,20 +137,22 @@ export class ApproveBudgetService {
       }
     }
 
-    // Criar registro financeiro
+    // Criar registro financeiro como conta a receber
     await prismaClient.financial.create({
       data: {
         budget_id: budgetId,
-        description: `Aprovação de orçamento - ${budget.vehicle_model} (${budget.vehicle_plate})`,
+        company_id: budget.company_id ?? undefined,
+        description: `Recebimento a receber - ${budget.vehicle_model} (${budget.vehicle_plate})`,
         type: 'INPUT',
         value: budget.total_value,
+        payment_method: 'A RECEBER',
       },
     });
 
-    // Atualizar status do orçamento
+    // Aprovação do cliente gera a ordem de serviço (status em andamento)
     const updatedBudget = await prismaClient.budget.update({
       where: { id: budgetId },
-      data: { status: 'APPROVED' },
+      data: { status: 'IN_PROGRESS' },
       include: { items: true },
     });
 
@@ -211,11 +220,13 @@ export class GetVehicleHistoryService {
   async execute(filters?: {
     vehicle_plate?: string;
     mechanic_id?: string;
+    company_id?: string;
   }) {
     const budgets = await prismaClient.budget.findMany({
       where: {
         vehicle_plate: filters?.vehicle_plate ? { contains: filters.vehicle_plate } : undefined,
         mechanic_id: filters?.mechanic_id,
+        company_id: filters?.company_id,
       },
       orderBy: { createdAt: 'desc' },
       include: {

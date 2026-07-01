@@ -21,6 +21,7 @@ export class CreateUserService {
         email: data.email,
         password: hashedPassword,
         role: data.role,
+        company_id: data.company_id,
       },
     });
 
@@ -80,6 +81,7 @@ export class GetMeService {
         name: true,
         email: true,
         role: true,
+        company_id: true,
       },
     });
 

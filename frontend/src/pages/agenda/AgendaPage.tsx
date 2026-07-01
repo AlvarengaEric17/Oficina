@@ -30,7 +30,7 @@ export const AgendaPage: React.FC = () => {
 
   useEffect(() => {
     const handleScheduleUpdate = (data: any) => {
-      toast.info('Agenda atualizada em tempo real!');
+      toast.success('Agenda atualizada em tempo real!');
       if (data.type === 'SLOT_CREATED') {
         loadSchedule();
       }
@@ -93,11 +93,6 @@ export const AgendaPage: React.FC = () => {
     } catch (error: any) {
       toast.error('Erro ao atualizar disponibilidade');
     }
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return format(date, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
   };
 
   const groupedSlots = slots.reduce((acc, slot) => {

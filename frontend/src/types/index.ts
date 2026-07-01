@@ -2,8 +2,8 @@
 export interface User {
   id: string;
   name: string;
+  role: 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN';
   email: string;
-  role: 'MECHANIC' | 'ADMIN';
 }
 
 export interface AuthResponse {

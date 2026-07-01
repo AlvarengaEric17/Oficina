@@ -6,7 +6,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
-import type { CashFlow, TaxCalculation } from '../../types';
+import type { CashFlow } from '../../types';
 
 export const FinanceiroPage: React.FC = () => {
   const [cashFlow, setCashFlow] = useState<CashFlow | null>(null);
@@ -16,7 +16,7 @@ export const FinanceiroPage: React.FC = () => {
 
   const [transactionData, setTransactionData] = useState({
     description: '',
-    type: 'INPUT' as const,
+    type: 'INPUT' as 'INPUT' | 'OUTPUT',
     value: 0,
     payment_method: '',
   });

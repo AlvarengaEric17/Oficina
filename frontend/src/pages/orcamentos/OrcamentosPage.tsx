@@ -36,6 +36,7 @@ const statusLabels: Record<BudgetStatus, string> = {
 
 export const OrcamentosPage: React.FC = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [parts, setParts] = useState<Part[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -48,8 +49,17 @@ export const OrcamentosPage: React.FC = () => {
     client_phone: '',
   });
 
+  const [itemForm, setItemForm] = useState({
+    part_id: '',
+    labor_name: '',
+    cost: 0,
+    price: 0,
+    quantity: 1,
+  });
+
   useEffect(() => {
     loadData();
+    loadParts();
   }, []);
 
   useEffect(() => {
@@ -75,6 +85,15 @@ export const OrcamentosPage: React.FC = () => {
     }
   };
 
+  const loadParts = async () => {
+    try {
+      const allParts = await partService.listParts();
+      setParts(allParts);
+    } catch (error) {
+      toast.error('Erro ao carregar peças');
+    }
+  };
+
   const handleCreateBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -93,6 +112,46 @@ export const OrcamentosPage: React.FC = () => {
     }
   };
 
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedBudget) {
+      toast.error('Selecione um orçamento primeiro');
+      return;
+    }
+
+    if (!itemForm.part_id && !itemForm.labor_name.trim()) {
+      toast.error('Informe uma peça ou descreva o serviço');
+      return;
+    }
+
+    try {
+      await budgetService.addItemToBudget({
+        budget_id: selectedBudget.id,
+        part_id: itemForm.part_id || undefined,
+        labor_name: itemForm.labor_name.trim() || undefined,
+        cost: Math.round(Number(itemForm.cost) * 100),
+        price: Math.round(Number(itemForm.price) * 100),
+        quantity: Math.max(1, Number(itemForm.quantity) || 1),
+      });
+
+      const allBudgets = await budgetService.getVehicleHistory();
+      setBudgets(allBudgets);
+      setSelectedBudget(allBudgets.find((budget) => budget.id === selectedBudget.id) ?? null);
+      setItemForm({
+        part_id: '',
+        labor_name: '',
+        cost: 0,
+        price: 0,
+        quantity: 1,
+      });
+
+      toast.success('Item adicionado ao orçamento!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Erro ao adicionar item');
+    }
+  };
+
   const handleUpdateStatus = async (budgetId: string, status: BudgetStatus) => {
     try {
       const updated = await budgetService.updateBudgetStatus(budgetId, status);
@@ -106,16 +165,16 @@ export const OrcamentosPage: React.FC = () => {
     }
   };
 
-  const handleApproveBudget = async (budgetId: string) => {
+  const handleSendToApproval = async (budgetId: string) => {
     try {
-      const updated = await budgetService.approveBudget(budgetId);
+      const updated = await budgetService.updateBudgetStatus(budgetId, 'WAITING_APPROVAL');
       setBudgets(budgets.map((b) => (b.id === budgetId ? updated : b)));
       if (selectedBudget?.id === budgetId) {
         setSelectedBudget(updated);
       }
-      toast.success('Orçamento aprovado com sucesso! Estoque abatido!');
+      toast.success('Orçamento enviado para aprovação do cliente!');
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Erro ao aprovar orçamento');
+      toast.error(error.response?.data?.error || 'Erro ao enviar para aprovação');
     }
   };
 
@@ -242,6 +301,64 @@ export const OrcamentosPage: React.FC = () => {
                 </div>
               </div>
 
+              {selectedBudget.status === 'DRAFT' && (
+                <div className="mb-6 border rounded-lg p-3 bg-gray-50">
+                  <h3 className="font-semibold mb-3">Adicionar Item</h3>
+                  <form onSubmit={handleAddItem} className="space-y-3">
+                    <Select
+                      label="Peça (opcional)"
+                      value={itemForm.part_id}
+                      onChange={(e) => {
+                        const selectedPart = parts.find((part) => part.id === e.target.value);
+                        setItemForm({
+                          ...itemForm,
+                          part_id: e.target.value,
+                          cost: selectedPart ? selectedPart.cost_price / 100 : itemForm.cost,
+                          price: selectedPart ? selectedPart.sale_price / 100 : itemForm.price,
+                        });
+                      }}
+                      options={parts.map((part) => ({ value: part.id, label: `${part.name} (${formatPrice(part.sale_price)})` }))}
+                    />
+
+                    <Input
+                      label="Descrição do serviço"
+                      placeholder="Ex: Revisão completa do freio"
+                      value={itemForm.labor_name}
+                      onChange={(e) => setItemForm({ ...itemForm, labor_name: e.target.value })}
+                    />
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        label="Custo (R$)"
+                        step="0.01"
+                        value={itemForm.cost}
+                        onChange={(e) => setItemForm({ ...itemForm, cost: Number(e.target.value) || 0 })}
+                      />
+                      <Input
+                        type="number"
+                        label="Valor (R$)"
+                        step="0.01"
+                        value={itemForm.price}
+                        onChange={(e) => setItemForm({ ...itemForm, price: Number(e.target.value) || 0 })}
+                      />
+                    </div>
+
+                    <Input
+                      type="number"
+                      label="Quantidade"
+                      min="1"
+                      value={itemForm.quantity}
+                      onChange={(e) => setItemForm({ ...itemForm, quantity: Number(e.target.value) || 1 })}
+                    />
+
+                    <Button type="submit" variant="success" className="w-full">
+                      Adicionar Item
+                    </Button>
+                  </form>
+                </div>
+              )}
+
               {selectedBudget.items.length > 0 && (
                 <div className="mb-6">
                   <h3 className="font-semibold mb-2">Itens ({selectedBudget.items.length})</h3>
@@ -268,7 +385,7 @@ export const OrcamentosPage: React.FC = () => {
                   <Button
                     variant="success"
                     className="w-full"
-                    onClick={() => handleApproveBudget(selectedBudget.id)}
+                    onClick={() => handleSendToApproval(selectedBudget.id)}
                   >
                     Enviar para Aprovação
                   </Button>

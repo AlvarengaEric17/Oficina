@@ -9,7 +9,7 @@ export class CreateManualTransactionController {
   async handle(req: Request, res: Response) {
     try {
       const service = new CreateManualTransactionService();
-      const transaction = await service.execute(req.body);
+      const transaction = await service.execute(req.body, req.company_id);
 
       return res.status(201).json(transaction);
     } catch (error: any) {
@@ -22,7 +22,7 @@ export class GetCashFlowController {
   async handle(req: Request, res: Response) {
     try {
       const service = new GetCashFlowService();
-      const cashflow = await service.execute();
+      const cashflow = await service.execute(req.company_id);
 
       return res.status(200).json(cashflow);
     } catch (error: any) {

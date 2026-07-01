@@ -14,6 +14,12 @@ datasource db {
 enum Role {
   MECHANIC
   ADMIN
+  SUPER_ADMIN
+}
+
+enum PlanType {
+  FREE
+  PRO
 }
 
 enum TransactionType {
@@ -33,12 +39,29 @@ enum BudgetStatus {
 }
 
 // Models
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  plan      PlanType @default(FREE)
+  active    Boolean  @default(true)
+
+  users     User[]
+  parts     Part[]
+  budgets   Budget[]
+  financials Financial[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model User {
   id    String  @id @default(uuid())
   name  String
   email String  @unique
   password String
   role  Role    @default(MECHANIC)
+  company_id String?
+  company Company? @relation(fields: [company_id], references: [id], onDelete: SetNull)
 
   budgets   Budget[]
   schedules Schedule[]
@@ -55,6 +78,8 @@ model Part {
   sale_price    Int     // em centavos
   quantity      Int
   min_quantity  Int
+  company_id    String?
+  company       Company? @relation(fields: [company_id], references: [id], onDelete: SetNull)
 
   budget_items BudgetItem[]
 
@@ -71,6 +96,8 @@ model Budget {
   status          BudgetStatus  @default(DRAFT)
   mechanic_id     String
   mechanic        User          @relation(fields: [mechanic_id], references: [id], onDelete: Cascade)
+  company_id      String?
+  company         Company?      @relation(fields: [company_id], references: [id], onDelete: SetNull)
   total_value     Int           // em centavos
 
   items      BudgetItem[]
@@ -80,6 +107,7 @@ model Budget {
   updatedAt DateTime @updatedAt
 
   @@index([mechanic_id])
+  @@index([company_id])
   @@index([status])
 }
 
@@ -105,6 +133,8 @@ model Financial {
   id              String          @id @default(uuid())
   budget_id       String?
   budget          Budget?         @relation(fields: [budget_id], references: [id], onDelete: SetNull)
+  company_id      String?
+  company         Company?        @relation(fields: [company_id], references: [id], onDelete: SetNull)
   description     String
   type            TransactionType
   value           Int             // em centavos
@@ -113,6 +143,7 @@ model Financial {
   createdAt DateTime @default(now())
 
   @@index([budget_id])
+  @@index([company_id])
   @@index([type])
 }
 

@@ -12,6 +12,7 @@ import { OrcamentosPage } from './pages/orcamentos/OrcamentosPage';
 import { BudgetPublicPage } from './pages/orcamentos/BudgetPublicPage';
 import { FinanceiroPage } from './pages/financeiro/FinanceiroPage';
 import { AgendaPage } from './pages/agenda/AgendaPage';
+import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
 
 function App() {
   const { initAuth, isAuthenticated } = useAuthStore();
@@ -70,6 +71,15 @@ function App() {
           element={
             <ProtectedRoute>
               <AgendaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute requiredRole="SUPER_ADMIN">
+              <SuperAdminPage />
             </ProtectedRoute>
           }
         />

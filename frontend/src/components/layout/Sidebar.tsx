@@ -6,7 +6,7 @@ interface NavItem {
   label: string;
   to: string;
   icon: string;
-  requiredRole?: 'MECHANIC' | 'ADMIN';
+  requiredRole?: 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
 const navItems: NavItem[] = [
@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { label: 'Orçamentos', to: '/orcamentos', icon: '💰', requiredRole: undefined },
   { label: 'Financeiro', to: '/financeiro', icon: '💳', requiredRole: 'ADMIN' },
   { label: 'Agenda', to: '/agenda', icon: '📅', requiredRole: undefined },
+  { label: 'Super Admin', to: '/super-admin', icon: '🛡️', requiredRole: 'SUPER_ADMIN' },
 ];
 
 export const Sidebar: React.FC = () => {

@@ -9,7 +9,6 @@ export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const [parts, setParts] = useState<Part[]>([]);
   const [criticalParts, setCriticalParts] = useState<Part[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
@@ -20,8 +19,6 @@ export const DashboardPage: React.FC = () => {
         setCriticalParts(critical);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
 

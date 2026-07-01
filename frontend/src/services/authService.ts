@@ -6,7 +6,8 @@ export const authService = {
     name: string;
     email: string;
     password: string;
-    role?: 'MECHANIC' | 'ADMIN';
+    role?: 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN';
+    company_id?: string;
   }): Promise<User> {
     const { data: response } = await apiClient.post<User>('/users', data);
     return response;

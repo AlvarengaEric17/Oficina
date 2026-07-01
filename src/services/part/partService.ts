@@ -1,8 +1,14 @@
 import { prismaClient } from '../../prisma/client';
 import { CreatePartInput, UpdatePartInput } from '../../schemas/partSchema';
+import { PlanLimitService } from '../planLimitService';
 
 export class CreatePartService {
-  async execute(data: CreatePartInput) {
+  async execute(data: CreatePartInput, companyId?: string) {
+    if (companyId) {
+      const limitService = new PlanLimitService();
+      await limitService.ensureLimit(companyId, 'part');
+    }
+
     const partWithSameSku = await prismaClient.part.findUnique({
       where: { sku: data.sku },
     });
@@ -19,6 +25,7 @@ export class CreatePartService {
         sale_price: data.sale_price,
         quantity: data.quantity,
         min_quantity: data.min_quantity,
+        company_id: companyId,
       },
     });
 
@@ -27,8 +34,10 @@ export class CreatePartService {
 }
 
 export class ListPartsService {
-  async execute() {
-    const parts = await prismaClient.part.findMany();
+  async execute(companyId?: string) {
+    const parts = await prismaClient.part.findMany({
+      where: companyId ? { company_id: companyId } : undefined,
+    });
 
     const partsWithCriticalAlert = parts.map((part) => ({
       ...part,

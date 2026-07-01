@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { prismaClient } from '../prisma/client';
 
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,6 +18,17 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
     };
     req.user_id = decoded.user_id;
     (req as any).user_role = decoded.role;
+
+    const user = await prismaClient.user.findUnique({
+      where: { id: decoded.user_id },
+      select: { company_id: true, role: true, company: { select: { active: true } } },
+    });
+
+    if (user?.company && user.company.active === false) {
+      return res.status(403).json({ error: 'Esta empresa está inativa. Entre em contato com o suporte.' });
+    }
+
+    req.company_id = user?.company_id ?? undefined;
     next();
   } catch (error) {
     res.status(401).json({ error: 'Token inválido ou expirado' });

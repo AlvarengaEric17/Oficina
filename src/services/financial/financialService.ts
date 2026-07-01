@@ -1,5 +1,6 @@
 import { prismaClient } from '../../prisma/client';
 import { ManualTransactionInput, CalculateTaxInput } from '../../schemas/financialSchema';
+import { PlanLimitService } from '../planLimitService';
 
 // Tabela de taxas por número de parcelas (em percentual)
 const CARD_TAX_TABLE: Record<number, number> = {
@@ -18,23 +19,29 @@ const CARD_TAX_TABLE: Record<number, number> = {
 };
 
 export class CreateManualTransactionService {
-  async execute(data: ManualTransactionInput) {
+  async execute(data: ManualTransactionInput, companyId?: string) {
+    if (companyId) {
+      const limitService = new PlanLimitService();
+      await limitService.ensureLimit(companyId, 'financial');
+    }
+
     const transaction = await prismaClient.financial.create({
       data: {
         description: data.description,
         type: data.type,
         value: data.value,
         payment_method: data.payment_method,
+        company_id: companyId,
       },
     });
-
     return transaction;
   }
 }
 
 export class GetCashFlowService {
-  async execute() {
+  async execute(companyId?: string) {
     const transactions = await prismaClient.financial.findMany({
+      where: companyId ? { company_id: companyId } : undefined,
       orderBy: { createdAt: 'desc' },
       include: {
         budget: {

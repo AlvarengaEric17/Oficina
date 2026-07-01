@@ -16,7 +16,7 @@ export class CreateBudgetController {
       }
 
       const service = new CreateBudgetService();
-      const budget = await service.execute(req.body, req.user_id);
+      const budget = await service.execute(req.body, req.user_id, req.company_id);
 
       return res.status(201).json(budget);
     } catch (error: any) {
@@ -89,6 +89,7 @@ export class GetVehicleHistoryController {
       const history = await service.execute({
         vehicle_plate: typeof vehicle_plate === 'string' ? vehicle_plate : undefined,
         mechanic_id: typeof mechanic_id === 'string' ? mechanic_id : undefined,
+        company_id: req.company_id,
       });
 
       return res.status(200).json(history);

@@ -5,7 +5,7 @@ export class CreatePartController {
   async handle(req: Request, res: Response) {
     try {
       const service = new CreatePartService();
-      const part = await service.execute(req.body);
+      const part = await service.execute(req.body, req.company_id);
 
       return res.status(201).json(part);
     } catch (error: any) {
@@ -18,7 +18,7 @@ export class ListPartsController {
   async handle(req: Request, res: Response) {
     try {
       const service = new ListPartsService();
-      const parts = await service.execute();
+      const parts = await service.execute(req.company_id);
 
       return res.status(200).json(parts);
     } catch (error: any) {
