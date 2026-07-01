@@ -44,10 +44,12 @@ export const budgetService = {
   async getVehicleHistory(filters?: {
     vehicle_plate?: string;
     mechanic_id?: string;
+    search?: string;
   }): Promise<Budget[]> {
     const params = new URLSearchParams();
     if (filters?.vehicle_plate) params.append('vehicle_plate', filters.vehicle_plate);
     if (filters?.mechanic_id) params.append('mechanic_id', filters.mechanic_id);
+    if (filters?.search) params.append('search', filters.search);
 
     const { data } = await apiClient.get<Budget[]>(`/vehicles/history?${params.toString()}`);
     return data;

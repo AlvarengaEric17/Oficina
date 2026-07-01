@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { budgetService } from '../../services/budgetService';
 import { partService } from '../../services/partService';
@@ -40,6 +40,7 @@ export const OrcamentosPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { isConnected, joinBudget, onStatusUpdated } = useWebSocket();
 
   const [formData, setFormData] = useState({
@@ -74,9 +75,9 @@ export const OrcamentosPage: React.FC = () => {
     }
   }, [selectedBudget, isConnected]);
 
-  const loadData = async () => {
+  const loadData = async (search = searchTerm) => {
     try {
-      const allBudgets = await budgetService.getVehicleHistory();
+      const allBudgets = await budgetService.getVehicleHistory({ search });
       setBudgets(allBudgets);
     } catch (error) {
       toast.error('Erro ao carregar dados');
@@ -84,6 +85,10 @@ export const OrcamentosPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData(searchTerm);
+  }, [searchTerm]);
 
   const loadParts = async () => {
     try {
@@ -183,6 +188,38 @@ export const OrcamentosPage: React.FC = () => {
     currency: 'BRL',
   });
 
+  const vehicleReports = useMemo(() => {
+    const grouped = new Map<string, Budget[]>();
+
+    budgets.forEach((budget) => {
+      const key = `${budget.vehicle_plate}-${budget.vehicle_model}`;
+      const current = grouped.get(key) ?? [];
+      current.push(budget);
+      grouped.set(key, current);
+    });
+
+    return Array.from(grouped.entries()).map(([key, items]) => {
+      const sorted = [...items].sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      const latest = sorted[0];
+
+      return {
+        id: key,
+        plate: latest.vehicle_plate,
+        model: latest.vehicle_model,
+        clientName: latest.client_name,
+        lastMaintenanceDate: latest.updatedAt || latest.createdAt,
+        lastStatus: latest.status,
+        totalServices: items.length,
+        totalRevenue: items.reduce((sum, item) => sum + item.total_value, 0),
+      };
+    }).sort((a, b) => new Date(b.lastMaintenanceDate).getTime() - new Date(a.lastMaintenanceDate).getTime());
+  }, [budgets]);
+
   const statuses = Object.entries(statusLabels).map(([key, value]) => ({
     value: key,
     label: value,
@@ -198,6 +235,56 @@ export const OrcamentosPage: React.FC = () => {
               {showForm ? 'Cancelar' : '+ Novo Orçamento'}
             </Button>
           </div>
+
+          <Card className="mb-6">
+            <div className="space-y-3">
+              <Input
+                label="Buscar por placa, modelo ou cliente"
+                placeholder="Ex: ABC-1234, Fiesta, João"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </Card>
+
+          <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">📋 Relatório por carro</h2>
+              <span className="text-sm text-gray-600">{vehicleReports.length} veículo(s)</span>
+            </div>
+
+            <div className="space-y-3">
+              {vehicleReports.map((report) => (
+                <div key={report.id} className="border border-blue-100 rounded-lg p-3 bg-white">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{report.model}</h3>
+                      <p className="text-sm text-gray-600">{report.plate} • {report.clientName}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[report.lastStatus as BudgetStatus]}`}>
+                      {statusLabels[report.lastStatus as BudgetStatus]}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Última manutenção</p>
+                      <p className="font-semibold">{format(new Date(report.lastMaintenanceDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Atendimentos</p>
+                      <p className="font-semibold">{report.totalServices}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-sm">
+                    <p className="text-gray-500">Faturamento do veículo</p>
+                    <p className="font-semibold text-blue-600">{formatPrice(report.totalRevenue)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
 
           {showForm && (
             <Card className="mb-6">

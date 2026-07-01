@@ -221,12 +221,23 @@ export class GetVehicleHistoryService {
     vehicle_plate?: string;
     mechanic_id?: string;
     company_id?: string;
+    search?: string;
   }) {
+    const search = filters?.search?.trim();
+
     const budgets = await prismaClient.budget.findMany({
       where: {
         vehicle_plate: filters?.vehicle_plate ? { contains: filters.vehicle_plate } : undefined,
         mechanic_id: filters?.mechanic_id,
         company_id: filters?.company_id,
+        OR: search
+          ? [
+              { vehicle_plate: { contains: search, mode: 'insensitive' } },
+              { vehicle_model: { contains: search, mode: 'insensitive' } },
+              { client_name: { contains: search, mode: 'insensitive' } },
+              { client_phone: { contains: search, mode: 'insensitive' } },
+            ]
+          : undefined,
       },
       orderBy: { createdAt: 'desc' },
       include: {

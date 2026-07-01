@@ -83,12 +83,13 @@ export class UpdateBudgetStatusController {
 export class GetVehicleHistoryController {
   async handle(req: Request, res: Response) {
     try {
-      const { vehicle_plate, mechanic_id } = req.query;
+      const { vehicle_plate, mechanic_id, search } = req.query;
 
       const service = new GetVehicleHistoryService();
       const history = await service.execute({
         vehicle_plate: typeof vehicle_plate === 'string' ? vehicle_plate : undefined,
         mechanic_id: typeof mechanic_id === 'string' ? mechanic_id : undefined,
+        search: typeof search === 'string' ? search : undefined,
         company_id: req.company_id,
       });
 
