@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://upgraded-broccoli-v9j65j94799hw5r9-3000.app.github.dev';
 
 export const useWebSocket = () => {
   const socketRef = useRef<Socket | null>(null);
