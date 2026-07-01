@@ -1,6 +1,7 @@
 import { prismaClient } from '../../prisma/client';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { PlanType } from '@prisma/client';
 import { CreateUserInput, SessionInput } from '../../schemas/userSchema';
 
 export class CreateUserService {
@@ -15,13 +16,21 @@ export class CreateUserService {
 
     const hashedPassword = await bcryptjs.hash(data.password, 10);
 
+    const company = await prismaClient.company.create({
+      data: {
+        name: `Empresa de ${data.name}`,
+        plan: PlanType.FREE,
+        active: true,
+      },
+    });
+
     const user = await prismaClient.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: hashedPassword,
-        role: 'MECHANIC',
-        company_id: null,
+        role: 'ADMIN',
+        company_id: company.id,
       },
     });
 
@@ -30,6 +39,7 @@ export class CreateUserService {
       name: user.name,
       email: user.email,
       role: user.role,
+      company_id: user.company_id,
     };
   }
 }
